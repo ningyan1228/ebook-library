@@ -11828,6 +11828,29 @@
                       "size":  "",
                       "accessNote":  "",
                       "sharedAt":  "2026-06-24 11:28"
+                  },
+                  {
+                      "id":  "book-0515",
+                      "title":  "平凡的世界（全三册） (路遥)",
+                      "authors":  [
+                                      "路遥"
+                                  ],
+                      "publisher":  "",
+                      "year":  "",
+                      "category":  "未分类",
+                      "tags":  [
+                                   "EPUB",
+                                   "夸克网盘"
+                               ],
+                      "format":  "EPUB",
+                      "language":  "中文",
+                      "description":  "平凡的世界（全三册） (路遥) (z-library.sk, 1lib.sk, z-lib.sk).epub",
+                      "cloudProvider":  "夸克网盘",
+                      "url":  "https://pan.quark.cn/s/2b87c371dc52",
+                      "extractionCode":  "",
+                      "size":  "",
+                      "accessNote":  "",
+                      "sharedAt":  "2026-06-24 12:00"
                   }
               ]
 }
