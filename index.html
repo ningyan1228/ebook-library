@@ -392,9 +392,13 @@
   </div>
 
   <script>
+    const HOT_API_BASE = "https://ningyan1228-ebook-library.netlify.app/api";
+    const BAIDU_TONGJI_ID = "";
+
     const state = {
       books: [],
-      query: ""
+      query: "",
+      hotCounts: new Map()
     };
 
     const els = {
@@ -439,23 +443,89 @@
       ].filter(Boolean).join(" · ");
     }
 
-    function renderRanking() {
-      const ranked = state.books
+    function getHotCount(book) {
+      return state.hotCounts.get(book.id) || Number(book.hotScore || 0);
+    }
+
+    function getBookById(id) {
+      return state.books.find((book) => book.id === id);
+    }
+
+    function loadBaiduTongji() {
+      if (!BAIDU_TONGJI_ID) return;
+
+      window._hmt = window._hmt || [];
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = `https://hm.baidu.com/hm.js?${encodeURIComponent(BAIDU_TONGJI_ID)}`;
+      document.head.appendChild(script);
+    }
+
+    async function loadHotRanking() {
+      if (!HOT_API_BASE) return null;
+
+      try {
+        const response = await fetch(`${HOT_API_BASE.replace(/\/$/, "")}/rank?limit=12`, { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const ranking = Array.isArray(data.ranking) ? data.ranking : [];
+
+        state.hotCounts = new Map(ranking.map((item) => [item.id, Number(item.clicks || 0)]));
+        return ranking.map((item) => getBookById(item.id)).filter(Boolean);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    async function trackClick(book) {
+      if (window._hmt && book) {
+        window._hmt.push(["_trackEvent", "book", "open", `${book.id} ${book.title}`]);
+      }
+
+      if (!HOT_API_BASE || !book || !book.id) return;
+
+      const endpoint = `${HOT_API_BASE.replace(/\/$/, "")}/click`;
+      const body = JSON.stringify({ id: book.id });
+
+      try {
+        if (navigator.sendBeacon) {
+          const blob = new Blob([body], { type: "application/json" });
+          navigator.sendBeacon(endpoint, blob);
+          return;
+        }
+
+        await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+          keepalive: true
+        });
+      } catch (error) {
+        // The download link should never be blocked by analytics.
+      }
+    }
+
+    function renderRanking(rankedBooks) {
+      const ranked = (rankedBooks && rankedBooks.length ? rankedBooks : state.books
         .slice()
-        .sort((a, b) => (Number(b.hotScore || 0) - Number(a.hotScore || 0)) || a.id.localeCompare(b.id))
-        .slice(0, 12);
+        .sort((a, b) => (getHotCount(b) - getHotCount(a)) || a.id.localeCompare(b.id))
+        .slice(0, 12));
 
       els.ranking.innerHTML = ranked.map((book, index) => `
         <li>
-          <a class="rank-item" href="${escapeHtml(book.url)}" target="_blank" rel="noopener noreferrer">
+          <a class="rank-item" href="${escapeHtml(book.url)}" target="_blank" rel="noopener noreferrer" data-book-id="${escapeHtml(book.id)}">
             <span class="rank-num">${index + 1}</span>
             <span>
               <span class="rank-title">${escapeHtml(book.title)}</span>
-              <span class="rank-meta">${escapeHtml(getMeta(book))}</span>
+              <span class="rank-meta">${escapeHtml(getMeta(book))}${getHotCount(book) ? ` · ${getHotCount(book)} 次点击` : ""}</span>
             </span>
           </a>
         </li>
       `).join("");
+
+      els.ranking.querySelectorAll("[data-book-id]").forEach((link) => {
+        link.addEventListener("click", () => trackClick(getBookById(link.dataset.bookId)));
+      });
     }
 
     function renderResult(book) {
@@ -471,7 +541,7 @@
           </div>
           <div class="result-actions">
             ${copyButton}
-            <a class="open-link" href="${escapeHtml(book.url)}" target="_blank" rel="noopener noreferrer">打开网盘</a>
+            <a class="open-link" href="${escapeHtml(book.url)}" target="_blank" rel="noopener noreferrer" data-book-id="${escapeHtml(book.id)}">打开网盘</a>
           </div>
         </article>
       `;
@@ -486,6 +556,10 @@
             button.textContent = "复制提取码";
           }, 1200);
         });
+      });
+
+      els.results.querySelectorAll("[data-book-id]").forEach((link) => {
+        link.addEventListener("click", () => trackClick(getBookById(link.dataset.bookId)));
       });
     }
 
@@ -518,7 +592,8 @@
         const data = await response.json();
         state.books = Array.isArray(data.books) ? data.books : [];
         els.count.textContent = `${state.books.length} 本已收录`;
-        renderRanking();
+        const rankedBooks = await loadHotRanking();
+        renderRanking(rankedBooks);
         renderResults();
       } catch (error) {
         els.count.textContent = "加载失败";
@@ -537,6 +612,7 @@
       renderResults();
     });
 
+    loadBaiduTongji();
     loadBooks();
   </script>
 </body>
