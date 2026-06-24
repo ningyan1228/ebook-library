@@ -1,1 +1,6 @@
 
+server.*.log
+.netlify/
+node_modules/
+package-lock.json
+dist/
