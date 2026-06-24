@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>电子书资料库</title>
+  <style>
+    :root {
+      --bg: #f7f7f4;
+      --panel: #ffffff;
+      --text: #202124;
+      --muted: #646a73;
+      --line: #deded8;
+      --accent: #1d6f5f;
+      --accent-strong: #155447;
+      --warn: #9a5b00;
+      --shadow: 0 10px 28px rgba(24, 31, 37, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .bar {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 18px 0;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.2;
+      font-weight: 750;
+      letter-spacing: 0;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    main {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 44px;
+      flex: 1;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 180px 150px;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+      padding: 0 12px;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(29, 111, 95, 0.16);
+    }
+
+    .status {
+      margin: 8px 0 18px;
+      color: var(--muted);
+      min-height: 22px;
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .book {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      min-height: 238px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      border: 1px solid #d7ddd9;
+      border-radius: 999px;
+      color: #3d514b;
+      background: #f3f8f5;
+      padding: 3px 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+
+    .book h2 {
+      font-size: 18px;
+      line-height: 1.35;
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    .detail {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .desc {
+      color: #34383d;
+      font-size: 14px;
+      line-height: 1.65;
+      margin: 0;
+      flex: 1;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .download,
+    .copy {
+      border: 0;
+      border-radius: 6px;
+      min-height: 38px;
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+    }
+
+    .download {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 650;
+    }
+
+    .download:hover {
+      background: var(--accent-strong);
+    }
+
+    .copy {
+      background: #eef1ef;
+      color: #24332f;
+      white-space: nowrap;
+    }
+
+    .empty,
+    .error {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--muted);
+      padding: 24px;
+    }
+
+    .error {
+      color: var(--warn);
+    }
+
+    footer {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 0 0 22px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 760px) {
+      .bar,
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .count {
+        white-space: normal;
+      }
+
+      main {
+        padding-top: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="bar">
+        <h1>电子书资料库</h1>
+        <div class="count" id="count">正在加载</div>
+      </div>
+    </header>
+
+    <main>
+      <section class="toolbar" aria-label="搜索和筛选">
+        <input id="search" type="search" placeholder="搜索书名、作者、标签" autocomplete="off">
+        <select id="category" aria-label="分类">
+          <option value="">全部分类</option>
+        </select>
+        <select id="format" aria-label="格式">
+          <option value="">全部格式</option>
+        </select>
+      </section>
+
+      <div class="status" id="status"></div>
+      <section class="grid" id="grid" aria-live="polite"></section>
+    </main>
+
+    <footer>
+      仅收录你拥有分享权或已获授权的资源链接。下载页面由网盘服务提供，本站不托管电子书文件。
+    </footer>
+  </div>
+
+  <script>
+    const state = {
+      books: [],
+      query: "",
+      category: "",
+      format: ""
+    };
+
+    const els = {
+      count: document.querySelector("#count"),
+      search: document.querySelector("#search"),
+      category: document.querySelector("#category"),
+      format: document.querySelector("#format"),
+      status: document.querySelector("#status"),
+      grid: document.querySelector("#grid")
+    };
+
+    const normalize = (value) => String(value || "").trim().toLowerCase();
+    const unique = (items) => [...new Set(items.filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+
+    function searchableText(book) {
+      return normalize([
+        book.title,
+        (book.authors || []).join(" "),
+        book.publisher,
+        book.category,
+        (book.tags || []).join(" "),
+        book.format,
+        book.description
+      ].join(" "));
+    }
+
+    function fillSelect(select, values, firstLabel) {
+      select.innerHTML = `<option value="">${firstLabel}</option>`;
+      values.forEach((value) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+      });
+    }
+
+    function renderFilters() {
+      fillSelect(els.category, unique(state.books.map((book) => book.category)), "全部分类");
+      fillSelect(els.format, unique(state.books.map((book) => book.format)), "全部格式");
+    }
+
+    function getFilteredBooks() {
+      return state.books.filter((book) => {
+        const matchQuery = !state.query || searchableText(book).includes(state.query);
+        const matchCategory = !state.category || book.category === state.category;
+        const matchFormat = !state.format || book.format === state.format;
+        return matchQuery && matchCategory && matchFormat;
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    function renderBook(book) {
+      const authors = (book.authors || []).join(" / ") || "作者未录入";
+      const tags = [book.category, book.format, book.cloudProvider, ...(book.tags || [])].filter(Boolean);
+      const code = book.extractionCode ? `<button class="copy" type="button" data-code="${escapeHtml(book.extractionCode)}">复制提取码</button>` : "";
+      const details = [
+        authors,
+        book.publisher,
+        book.year,
+        book.size
+      ].filter(Boolean).join(" · ");
+
+      return `
+        <article class="book">
+          <div class="meta">${tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>
+          <h2>${escapeHtml(book.title)}</h2>
+          <p class="detail">${escapeHtml(details)}</p>
+          <p class="desc">${escapeHtml(book.description || "暂无简介。")}</p>
+          <div class="actions">
+            <a class="download" href="${escapeHtml(book.url)}" target="_blank" rel="noopener noreferrer">打开网盘</a>
+            ${code}
+          </div>
+        </article>
+      `;
+    }
+
+    function render() {
+      const filtered = getFilteredBooks();
+      els.count.textContent = `${filtered.length} / ${state.books.length} 本`;
+      els.status.textContent = state.query ? `关键词：${state.query}` : "";
+
+      if (!filtered.length) {
+        els.grid.innerHTML = `<div class="empty">没有找到匹配的书。</div>`;
+        return;
+      }
+
+      els.grid.innerHTML = filtered.map(renderBook).join("");
+      els.grid.querySelectorAll(".copy").forEach((button) => {
+        button.addEventListener("click", async () => {
+          await navigator.clipboard.writeText(button.dataset.code);
+          button.textContent = "已复制";
+          setTimeout(() => {
+            button.textContent = "复制提取码";
+          }, 1200);
+        });
+      });
+    }
+
+    async function loadBooks() {
+      try {
+        const response = await fetch("books.json", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        state.books = Array.isArray(data.books) ? data.books : [];
+        renderFilters();
+        render();
+      } catch (error) {
+        els.count.textContent = "加载失败";
+        els.grid.innerHTML = `<div class="error">无法读取 books.json。部署到网站空间后会正常加载；本地预览请用静态服务器打开。</div>`;
+      }
+    }
+
+    els.search.addEventListener("input", (event) => {
+      state.query = normalize(event.target.value);
+      render();
+    });
+
+    els.category.addEventListener("change", (event) => {
+      state.category = event.target.value;
+      render();
+    });
+
+    els.format.addEventListener("change", (event) => {
+      state.format = event.target.value;
+      render();
+    });
+
+    loadBooks();
+  </script>
+</body>
+</html>
