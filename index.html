@@ -506,10 +506,12 @@
     }
 
     function renderRanking(rankedBooks) {
-      const ranked = (rankedBooks && rankedBooks.length ? rankedBooks : state.books
+      const rankedIds = new Set((rankedBooks || []).map((book) => book.id));
+      const fallbackBooks = state.books
         .slice()
         .sort((a, b) => (getHotCount(b) - getHotCount(a)) || a.id.localeCompare(b.id))
-        .slice(0, 12));
+        .filter((book) => !rankedIds.has(book.id));
+      const ranked = [...(rankedBooks || []), ...fallbackBooks].slice(0, 12);
 
       els.ranking.innerHTML = ranked.map((book, index) => `
         <li>
