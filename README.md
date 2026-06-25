@@ -54,43 +54,6 @@ http://localhost:8080
 
 可以部署到 Netlify、GitHub Pages、EdgeOne Pages 或任意静态网站空间。上线时把 `index.html` 和 `books.json` 放在同一目录即可。
 
-## 真实热度排行
-
-默认情况下，首页热度排行会读取 `books.json` 里的静态分数或按导入顺序展示。
-
-如果部署到 Netlify，项目会使用 `netlify/functions/hot.ts` 和 Netlify Blobs 自动统计真实点击量。用户点击“打开网盘”时会请求：
-
-```text
-POST /api/click
-```
-
-首页会请求：
-
-```text
-GET /api/rank?limit=12
-```
-
-这样热度排行会按真实点击次数自动更新。
-
-如果要自动统计真实点击量，可以部署 `deno/hot-rank-api.ts` 到 Deno Deploy，并开启 Deno KV。部署后把 Deno Deploy 生成的接口地址填到 `index.html`：
-
-```js
-const HOT_API_BASE = "https://你的-deno-api.deno.dev";
-```
-
-前端会在用户点击“打开网盘”时请求：
-
-```text
-POST /click
-```
-
-首页会请求：
-
-```text
-GET /rank?limit=12
-```
-
-这样热度排行就会按真实点击次数自动更新。
 
 ## 合规提醒
 

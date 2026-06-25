@@ -167,10 +167,11 @@
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(280px, 380px) 1fr;
+      grid-template-columns: 1fr;
       gap: 18px;
       align-items: start;
       margin-top: 18px;
+      max-width: 940px;
     }
 
     .panel {
@@ -368,14 +369,6 @@
       </section>
 
       <section class="layout">
-        <section class="panel" aria-label="热度排行">
-          <div class="panel-head">
-            <h2>热度排行</h2>
-            <span class="panel-note">Top 12</span>
-          </div>
-          <ol class="ranking" id="ranking"></ol>
-        </section>
-
         <section class="panel results" aria-label="搜索结果">
           <div class="panel-head">
             <h2>搜索结果</h2>
@@ -392,20 +385,17 @@
   </div>
 
   <script>
-    const HOT_API_BASE = "https://ningyan1228-ebook-library.netlify.app/api";
     const BAIDU_TONGJI_ID = "";
 
     const state = {
       books: [],
-      query: "",
-      hotCounts: new Map()
+      query: ""
     };
 
     const els = {
       count: document.querySelector("#count"),
       form: document.querySelector("#searchForm"),
       search: document.querySelector("#search"),
-      ranking: document.querySelector("#ranking"),
       status: document.querySelector("#status"),
       results: document.querySelector("#results")
     };
@@ -443,14 +433,6 @@
       ].filter(Boolean).join(" · ");
     }
 
-    function getHotCount(book) {
-      return state.hotCounts.get(book.id) || Number(book.hotScore || 0);
-    }
-
-    function getBookById(id) {
-      return state.books.find((book) => book.id === id);
-    }
-
     function loadBaiduTongji() {
       if (!BAIDU_TONGJI_ID) return;
 
@@ -461,73 +443,10 @@
       document.head.appendChild(script);
     }
 
-    async function loadHotRanking() {
-      if (!HOT_API_BASE) return null;
-
-      try {
-        const response = await fetch(`${HOT_API_BASE.replace(/\/$/, "")}/rank?limit=12`, { cache: "no-store" });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        const ranking = Array.isArray(data.ranking) ? data.ranking : [];
-
-        state.hotCounts = new Map(ranking.map((item) => [item.id, Number(item.clicks || 0)]));
-        return ranking.map((item) => getBookById(item.id)).filter(Boolean);
-      } catch (error) {
-        return null;
-      }
-    }
-
-    async function trackClick(book) {
+    function trackClick(book) {
       if (window._hmt && book) {
         window._hmt.push(["_trackEvent", "book", "open", `${book.id} ${book.title}`]);
       }
-
-      if (!HOT_API_BASE || !book || !book.id) return;
-
-      const endpoint = `${HOT_API_BASE.replace(/\/$/, "")}/click`;
-      const body = JSON.stringify({ id: book.id });
-
-      try {
-        if (navigator.sendBeacon) {
-          const blob = new Blob([body], { type: "application/json" });
-          navigator.sendBeacon(endpoint, blob);
-          return;
-        }
-
-        await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body,
-          keepalive: true
-        });
-      } catch (error) {
-        // The download link should never be blocked by analytics.
-      }
-    }
-
-    function renderRanking(rankedBooks) {
-      const rankedIds = new Set((rankedBooks || []).map((book) => book.id));
-      const fallbackBooks = state.books
-        .slice()
-        .sort((a, b) => (getHotCount(b) - getHotCount(a)) || a.id.localeCompare(b.id))
-        .filter((book) => !rankedIds.has(book.id));
-      const ranked = [...(rankedBooks || []), ...fallbackBooks].slice(0, 12);
-
-      els.ranking.innerHTML = ranked.map((book, index) => `
-        <li>
-          <a class="rank-item" href="${escapeHtml(book.url)}" target="_blank" rel="noopener noreferrer" data-book-id="${escapeHtml(book.id)}">
-            <span class="rank-num">${index + 1}</span>
-            <span>
-              <span class="rank-title">${escapeHtml(book.title)}</span>
-              <span class="rank-meta">${escapeHtml(getMeta(book))}${getHotCount(book) ? ` · ${getHotCount(book)} 次点击` : ""}</span>
-            </span>
-          </a>
-        </li>
-      `).join("");
-
-      els.ranking.querySelectorAll("[data-book-id]").forEach((link) => {
-        link.addEventListener("click", () => trackClick(getBookById(link.dataset.bookId)));
-      });
     }
 
     function renderResult(book) {
@@ -543,7 +462,7 @@
           </div>
           <div class="result-actions">
             ${copyButton}
-            <a class="open-link" href="${escapeHtml(book.url)}" target="_blank" rel="noopener noreferrer" data-book-id="${escapeHtml(book.id)}">打开网盘</a>
+            <a class="open-link" href="${escapeHtml(book.url)}" target="_blank" rel="noopener noreferrer" data-book-id="${escapeHtml(book.id)}" data-book-title="${escapeHtml(book.title)}">打开网盘</a>
           </div>
         </article>
       `;
@@ -561,7 +480,10 @@
       });
 
       els.results.querySelectorAll("[data-book-id]").forEach((link) => {
-        link.addEventListener("click", () => trackClick(getBookById(link.dataset.bookId)));
+        link.addEventListener("click", () => trackClick({
+          id: link.dataset.bookId,
+          title: link.dataset.bookTitle
+        }));
       });
     }
 
@@ -594,8 +516,6 @@
         const data = await response.json();
         state.books = Array.isArray(data.books) ? data.books : [];
         els.count.textContent = `${state.books.length} 本已收录`;
-        const rankedBooks = await loadHotRanking();
-        renderRanking(rankedBooks);
         renderResults();
       } catch (error) {
         els.count.textContent = "加载失败";
